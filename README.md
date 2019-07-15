@@ -56,7 +56,9 @@ Point MX record to the server IP which emails you want forward
 
 # That's it! all set now.
 
+## App flow
 
+![arn](./img/app-flow.jpg)
 
 ## API 
 
@@ -90,3 +92,7 @@ note: u/p was seeded at time data seeds run with migration
 
 ![arn](./img/login.png)
 ![arn](./img/dashboard.png)
+
+limitation ::> currently its support only single (from) domain forwarding.
+
+
