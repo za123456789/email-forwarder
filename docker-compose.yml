@@ -1,0 +1,86 @@
+version: '3'
+services:
+
+  #PHP Service
+  app:
+    build:
+      context: .
+      dockerfile: ./php/Dockerfile
+    container_name: app
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8000:8000"
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    working_dir: /var/www
+    volumes:
+      - ./localdrive/appdata:/var/www
+      - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker
+      - ./localdrive/email/virtual:/virtual
+    networks:
+      - email-forw-network
+
+  #Nginx Service
+  webserver:
+    image: nginx:alpine
+    container_name: webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./localdrive/appdata:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - email-forw-network
+
+  #MySQL Service
+  db:
+    image: mysql:5.7.22
+    container_name: db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_ROOT_PASSWORD: wordpass 
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - ./localdrive/dbdata:/var/lib/mysql/
+      - ./mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - email-forw-network
+
+  #Email service
+  emailserver:
+    image: zixia/simple-mail-forwarder 
+    container_name: emailserver 
+    restart: unless-stopped
+    tty: true
+    environment:
+      SMF_CONFIG: "zeshan@mydevops.space:xeshan.ahmed@gmail.com;xee@mydevops.space:xeshan.ahmed@gmail.com" 
+      SERVICE_NAME: emailserver 
+      SERVICE_TAGS: dev
+    ports:
+      - "25:25"
+    volumes:
+      - ./localdrive/email/virtual:/etc/postfix/virtual
+    networks:
+      - email-forw-network
+
+#Docker Networks
+networks:
+  email-forw-network:
+    driver: bridge
+#Volumes
+volumes:
+  dbdata:
+    driver: local
