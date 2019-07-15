@@ -86,6 +86,7 @@ URL -> localhost or ip-address
 - http://ip-address/
 
 user: admin@admin.com
+
 password: password
 
 note: u/p was seeded at time data seeds run with migration
