@@ -9,7 +9,7 @@ This repository aimed to dockerise email forwarder application which contains AP
 - Clone this repository.
 
 ``` bash
-$ git clone https://github.com/xeshan/emailforwarder 
+$ git clone https://github.com/xeshan/email-forwarder 
 ```
 
 - Switch to the docker directory.
@@ -38,7 +38,7 @@ $ docker exec -it app bash
 ```
 
 ``` bash
-$ composer install
+$ composer install --no-dev
 ```
 
 ``` bash
