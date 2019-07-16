@@ -38,6 +38,10 @@ $ docker exec -it app bash
 ```
 
 ``` bash
+$ composer install
+```
+
+``` bash
 $ php artisan cache:clear
 ```
 
