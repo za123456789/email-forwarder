@@ -1,0 +1,10 @@
+*~
+*.a
+*.la
+*.lo
+*.o
+*.so
+*ib_doublewrite
+*ib_logfile0
+*ib_logfile1
+*ibdata1
