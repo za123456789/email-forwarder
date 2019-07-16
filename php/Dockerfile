@@ -26,7 +26,7 @@ RUN docker-php-ext-install gd
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 RUN cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini
 RUN echo "www-data ALL=NOPASSWD: /usr/bin/docker" >> /etc/sudoers
-
+RUN cp /var/www/.env.example /var/www/.env
 RUN chown www-data:www-data /var/www/ -R
 
 EXPOSE 9000 8000
