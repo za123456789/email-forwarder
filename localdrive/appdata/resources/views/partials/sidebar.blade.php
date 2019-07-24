@@ -14,6 +14,42 @@
                 </a>
             </li>
  
+ @can('user_management_access')
+            <li class="treeview">
+                <a href="#">
+                    <i class="fa fa-users"></i>
+                    <span>@lang('quickadmin.user-management.title')</span>
+                    <span class="pull-right-container">
+                        <i class="fa fa-angle-left pull-right"></i>
+                    </span>
+                </a>
+                <ul class="treeview-menu">
+                    @can('role_access')
+                    <li>
+                        <a href="{{ route('admin.roles.index') }}">
+                            <i class="fa fa-briefcase"></i>
+                            <span>@lang('quickadmin.roles.title')</span>
+                        </a>
+                    </li>@endcan
+                    
+                    @can('user_access')
+                    <li>
+                        <a href="{{ route('admin.users.index') }}">
+                            <i class="fa fa-user"></i>
+                            <span>@lang('quickadmin.users.title')</span>
+                        </a>
+                    </li>@endcan
+                    <li>
+                        <a href="{{ url('/admin/oauthclient') }}">
+                            <i class="fa fa-wrench"></i>
+                            <span class="title">Oauth Client</span>
+                        </a>
+                    </li>
+                </ul>
+
+            </li>@endcan
+            
+           
             @can('email_access')
             <li>
                 <a href="{{ route('admin.emails.index') }}">

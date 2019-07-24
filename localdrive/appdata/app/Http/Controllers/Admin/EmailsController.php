@@ -54,21 +54,17 @@ class EmailsController extends Controller
         }
 
         $email = new Email;
-        $email->id = $request->input('id');
+        $email->id = $request->input('id'); 
         $email->from = $request->input('from');
         $email->to = $request->input('to');
         $result =  $email->save();
 
-	   $email_forwarder = $request->input('from'). "   ". $request->input('to');
+       
 
         if($result==1)
         {
-	    //system('sudo chmod 777 /virtual');
-            $current_forwarder = $email_forwarder . "\n";
-            $current_forwarder .= file_get_contents('/virtual'); 
-            file_put_contents('/virtual',  $current_forwarder);
-            system('sudo docker exec emailserver postmap /etc/postfix/virtual');            
-            system('sudo docker exec emailserver postfix reload');
+
+            $this->postfix_config($email->from, $email->to);
 
             return response()->json(['success' => "forwarder added"], 200);
         }
@@ -95,13 +91,41 @@ class EmailsController extends Controller
         $from_add = $request->from;
         $email = Email::where('from', $from_add)->first();
         if ($email == null ){
-            return abort(401);
+        
+            return response()->json(['message' => "forwarder not found"], 404);
         }
         else {
-        $email->update($request->all());
-        }
+            $email->update($request->all());
 
-        return "Forwarder Updated";
+            $grep_forwarder = shell_exec("grep '$request->from' /email/virtual");
+            $grep_array = explode(' ', $grep_forwarder);
+            $new_forwarder = $grep_array[0] ."   ". $request->to; 
+            $content = file_get_contents('/email/virtual'); 
+            $content = str_replace($grep_forwarder, $new_forwarder, $content);
+            file_put_contents ('/email/virtual', $content);        
+            system('sudo docker exec emailserver postmap /etc/postfix/virtual');            
+            system('sudo docker exec emailserver postfix reload');
+
+            }
+    
+            return response()->json(['success' => "forwarder updated"], 200);
+    }
+
+    public function postfix_config($from, $to){
+
+        $email_forwarder = $from. "   ". $to;
+        
+        $domain = explode('@', $from)[1];
+        $relaydomains = $domain . " #domain" . "\n"; 
+        $relaydomains .= file_get_contents('/email/relaydomains');
+        file_put_contents('/email/relaydomains',  $relaydomains);
+        system('sudo docker exec emailserver postmap /etc/postfix/relaydomains');
+
+        $current_forwarder = $email_forwarder . "\n";
+        $current_forwarder .= file_get_contents('/email/virtual'); 
+        file_put_contents('/email/virtual',  $current_forwarder);
+        system('sudo docker exec emailserver postmap /etc/postfix/virtual');            
+        system('sudo docker exec emailserver postfix reload');
 
     }
 
@@ -130,6 +154,21 @@ class EmailsController extends Controller
             return abort(401);
         }
         $email = Email::create($request->all());
+
+
+        $email_forwarder = $request->from . "   ". $request->to ;
+
+            // $domain = explode('@', $request->input('from'))[1];
+            // $relaydomains = $domain . "\n"; 
+            // $relaydomains .= file_get_contents('/email/relaydomains');
+            // file_put_contents('/email/relaydomains',  $relaydomains);
+
+        $current_forwarder = $email_forwarder . "\n";
+        $current_forwarder .= file_get_contents('/email/virtual'); 
+        file_put_contents('/email/virtual',  $current_forwarder);
+        system('sudo docker exec emailserver postmap /etc/postfix/virtual');            
+        system('sudo docker exec emailserver postfix reload');
+
 
         return redirect()->route('admin.emails.index');
     }
@@ -167,9 +206,17 @@ class EmailsController extends Controller
         $email = Email::findOrFail($id);
         $email->update($request->all());
 
+        $grep_forwarder = system("grep '$email->from' /email/virtual");
+        $grep_array = explode(' ', $grep_forwarder);
+        $new_forwarder = $grep_array[0] ."   ". $request->to; 
+        $content = file_get_contents('/email/virtual'); 
+        $content = str_replace($grep_forwarder, $new_forwarder, $content);
+        file_put_contents ('/email/virtual', $content);
+        system('sudo docker exec emailserver postmap /etc/postfix/virtual');            
+        system('sudo docker exec emailserver postfix reload');                
+        
         return redirect()->route('admin.emails.index');
     }
-
 
     /**
      * Display Email.

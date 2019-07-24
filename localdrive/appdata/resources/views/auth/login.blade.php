@@ -71,6 +71,7 @@
                                         style="margin-right: 15px;">
                                     @lang('quickadmin.qa_login')
                                 </button>
+                                 
                             </div>
                         </div>
                     </form>
