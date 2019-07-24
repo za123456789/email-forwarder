@@ -121,11 +121,21 @@ class EmailsController extends Controller
         file_put_contents('/email/relaydomains',  $relaydomains);
         system('sudo docker exec emailserver postmap /etc/postfix/relaydomains');
 
+        $grep_forwarder = shell_exec("grep '$email_forwarder' /email/virtual");
+        
+        if ($grep_forwarder == null ){
+
         $current_forwarder = $email_forwarder . "\n";
         $current_forwarder .= file_get_contents('/email/virtual'); 
         file_put_contents('/email/virtual',  $current_forwarder);
         system('sudo docker exec emailserver postmap /etc/postfix/virtual');            
         system('sudo docker exec emailserver postfix reload');
+        } else {
+
+        return response()->json(['message' => "Duplicate forwarder"], 404);
+
+        }
+
 
     }
 
