@@ -76,7 +76,7 @@ class EmailsController extends Controller
          $from_add = $request->from;
          $email = Email::where('from', $from_add)->first();
          if ($email == null ){
-            return response()->json(['message' => "Forwarder not found"], 401)
+            return response()->json(['message' => "Forwarder not found"], 401);
             }
             else {
                 $this->destroy($email->id);
