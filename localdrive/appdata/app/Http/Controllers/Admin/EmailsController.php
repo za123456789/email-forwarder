@@ -112,7 +112,7 @@ class EmailsController extends Controller
 
             }
     
-            return response()->json(['success' => "forwarder updated"], 200);
+            return response()->json(['success' => "Forwarder updated"], 200);
     }
 
     public function postfix_config($from, $to){
@@ -120,10 +120,17 @@ class EmailsController extends Controller
         $email_forwarder = $from. "   ". $to;
         
         $domain = explode('@', $from)[1];
-        $relaydomains = $domain . " #domain" . "\n"; 
-        $relaydomains .= file_get_contents('/email/relaydomains');
-        file_put_contents('/email/relaydomains',  $relaydomains);
-        system('sudo docker exec emailserver postmap /etc/postfix/relaydomains');
+        $grep_domain = shell_exec("grep '$domain' /email/relaydomains");
+        $allowed_domains = array('mydevops.space','mail-forward.wpmudev.host','missionstay.com','missionstay.org');
+
+        dd(in_array($grep_domain, $allowed_domains));
+
+        if ($grep_forwarder == null ){
+            $relaydomains = $domain . " #domain" . "\n"; 
+            $relaydomains .= file_get_contents('/email/relaydomains');
+            file_put_contents('/email/relaydomains',  $relaydomains);
+            system('sudo docker exec emailserver postmap /etc/postfix/relaydomains');
+        }
 
         $grep_forwarder = shell_exec("grep '$email_forwarder' /email/virtual");
         
@@ -141,7 +148,7 @@ class EmailsController extends Controller
 
         } else {
 
-            $this->response_type = "success";
+            $this->response_type = "error";
             $this->response_msg = "Duplicate forwarder";
             $this->response_code = "404";
 
