@@ -129,16 +129,21 @@ class EmailsController extends Controller
         
         if ($grep_forwarder == null ){
 
-        $current_forwarder = $email_forwarder . "\n";
-        $current_forwarder .= file_get_contents('/email/virtual'); 
-        file_put_contents('/email/virtual',  $current_forwarder);
-        system('sudo docker exec emailserver postmap /etc/postfix/virtual');            
-        system('sudo docker exec emailserver postfix reload');
+            $current_forwarder = $email_forwarder . "\n";
+            $current_forwarder .= file_get_contents('/email/virtual'); 
+            file_put_contents('/email/virtual',  $current_forwarder);
+            system('sudo docker exec emailserver postmap /etc/postfix/virtual');            
+            system('sudo docker exec emailserver postfix reload');
+
+            $this->response_type = "success";
+            $this->response_msg = "Forwarder added";
+            $this->response_code = 200;
+
         } else {
 
             $this->response_type = "success";
             $this->response_msg = "Duplicate forwarder";
-            $this->response_code = 404;
+            $this->response_code = "404";
 
         }
 
