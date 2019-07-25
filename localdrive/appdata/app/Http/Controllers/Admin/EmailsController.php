@@ -122,17 +122,21 @@ class EmailsController extends Controller
         $email_forwarder = $from. "   ". $to;
         
         $domain = explode('@', $from)[1];
-        $grep_domain = shell_exec("grep '$domain' /email/relaydomains");
-        $allowed_domains = array('mydevops.space','mail-forward.wpmudev.host','missionstay.com','missionstay.org');
+//        $grep_domain = shell_exec("grep '$domain' /email/relaydomains");
 
 //        dd(in_array($domain, $allowed_domains));
 
-        if (($grep_domain == null ) && in_array($domain, $allowed_domains)) {
+        if (in_array($domain, $this->allowed_domains)) {
+
+            $grep_domain = shell_exec("grep '$domain' /email/relaydomains");
+
+        if ($grep_domain == null ) { 
             $relaydomains = $domain . " #domain" . "\n"; 
             $relaydomains .= file_get_contents('/email/relaydomains');
             file_put_contents('/email/relaydomains',  $relaydomains);
             system('sudo docker exec emailserver postmap /etc/postfix/relaydomains');
-  
+            }
+            
             $grep_forwarder = shell_exec("grep '$email_forwarder' /email/virtual");
         
         if ($grep_forwarder == null ){
