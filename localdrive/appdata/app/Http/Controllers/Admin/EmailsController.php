@@ -123,16 +123,15 @@ class EmailsController extends Controller
         $grep_domain = shell_exec("grep '$domain' /email/relaydomains");
         $allowed_domains = array('mydevops.space','mail-forward.wpmudev.host','missionstay.com','missionstay.org');
 
-        dd(in_array($domain, $allowed_domains));
+//        dd(in_array($domain, $allowed_domains));
 
         if (($grep_domain == null ) && in_array($domain, $allowed_domains)) {
             $relaydomains = $domain . " #domain" . "\n"; 
             $relaydomains .= file_get_contents('/email/relaydomains');
             file_put_contents('/email/relaydomains',  $relaydomains);
             system('sudo docker exec emailserver postmap /etc/postfix/relaydomains');
-        }
-
-        $grep_forwarder = shell_exec("grep '$email_forwarder' /email/virtual");
+  
+            $grep_forwarder = shell_exec("grep '$email_forwarder' /email/virtual");
         
         if ($grep_forwarder == null ){
 
@@ -152,7 +151,13 @@ class EmailsController extends Controller
             $this->response_msg = "Duplicate forwarder";
             $this->response_code = "404";
 
-        }
+                }
+        } else {
+
+            $this->response_type = "error";
+            $this->response_msg = "Domain not allowed";
+            $this->response_code = "404";
+        } 
 
     }
 
