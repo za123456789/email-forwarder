@@ -50,8 +50,10 @@ class EmailsController extends Controller
         
         // print_r($request->input('id'));
         $validator = Validator::make($request->all(), [ 
-            'from' => 'required|email', 
+            'from' => 'required|email|unique:emails,from', 
             'to' => 'required|email', 
+        ],[
+            'from.unique' => 'Duplicate forwarder'
         ]);
         if ($validator->fails()) { 
             return response()->json(['error'=>$validator->errors()], 401);            
@@ -62,9 +64,7 @@ class EmailsController extends Controller
         $email->from = $request->input('from');
         $email->to = $request->input('to');
         $result =  $email->save();
-
        
-
         if($result==1)
         {
 
@@ -96,7 +96,7 @@ class EmailsController extends Controller
         $email = Email::where('from', $from_add)->first();
         if ($email == null ){
         
-            return response()->json(['message' => "forwarder not found"], 404);
+            return response()->json(['message' => "Forwarder not found"], 404);
         }
         else {
             $email->update($request->all());
