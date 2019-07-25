@@ -23,6 +23,8 @@ class EmailsController extends Controller
     public $response_msg;
     public $response_code;
 
+    public $allowed_domains = array('mydevops.space','mail-forward.wpmudev.host','missionstay.com','missionstay.org');
+
     public function index(Request $request)
     {
         // $email = Email::all();
