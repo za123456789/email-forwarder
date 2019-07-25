@@ -123,9 +123,9 @@ class EmailsController extends Controller
         $grep_domain = shell_exec("grep '$domain' /email/relaydomains");
         $allowed_domains = array('mydevops.space','mail-forward.wpmudev.host','missionstay.com','missionstay.org');
 
-        dd(in_array($grep_domain, $allowed_domains));
+        dd(in_array($domain, $allowed_domains));
 
-        if ($grep_forwarder == null ){
+        if (($grep_domain == null ) && in_array($domain, $allowed_domains)) {
             $relaydomains = $domain . " #domain" . "\n"; 
             $relaydomains .= file_get_contents('/email/relaydomains');
             file_put_contents('/email/relaydomains',  $relaydomains);
