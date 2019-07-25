@@ -76,13 +76,21 @@ class EmailsController extends Controller
          $from_add = $request->from;
          $email = Email::where('from', $from_add)->first();
          if ($email == null ){
-            return abort(401);
+            return response()->json(['message' => "Forwarder not found"], 401)
             }
             else {
-         $this->destroy($email->id);
+                $this->destroy($email->id);
+            $grep_forwarder = shell_exec("grep '$request->from' /email/virtual");
+            $grep_array = explode(' ', $grep_forwarder);
+            $content = file_get_contents('/email/virtual'); 
+            $content = str_replace($grep_forwarder, ' ', $content);
+            file_put_contents ('/email/virtual', $content);        
+            system('sudo docker exec emailserver postmap /etc/postfix/virtual');            
+            system('sudo docker exec emailserver postfix reload');
+
             }
 
-         return "Forwarder Deleted";
+            return response()->json(['success' => "Forwarder deleted"], 200);
 
     }
 
@@ -113,8 +121,7 @@ class EmailsController extends Controller
 
     public function postfix_config($from, $to){
 
-        $email_forwarder = $from. "   ". $to;
-        
+        $email_forwarder = $from. "   ". $to;        
         $domain = explode('@', $from)[1];
 
         if (in_array($domain, $this->allowed_domains)) {
@@ -136,20 +143,15 @@ class EmailsController extends Controller
             file_put_contents('/email/virtual',  $current_forwarder);
             system('sudo docker exec emailserver postmap /etc/postfix/virtual');            
             system('sudo docker exec emailserver postfix reload');
-
             $this->response_type = "success";
             $this->response_msg = "Forwarder added";
             $this->response_code = 200;
-
         } else {
-
             $this->response_type = "error";
             $this->response_msg = "Duplicate forwarder";
             $this->response_code = "401";
-
                 }
         } else {
-
             $this->response_type = "error";
             $this->response_msg = "Domain not allowed";
             $this->response_code = "401";
