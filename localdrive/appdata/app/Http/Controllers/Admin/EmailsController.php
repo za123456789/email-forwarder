@@ -22,7 +22,6 @@ class EmailsController extends Controller
     public $response_type;
     public $response_msg;
     public $response_code;
-
     public $allowed_domains = array('mydevops.space','mail-forward.wpmudev.host','missionstay.com','missionstay.org');
 
     public function index(Request $request)
@@ -49,8 +48,8 @@ class EmailsController extends Controller
     }
 
     public function insert(Request $request){
-        
-        // print_r($request->input('id'));
+
+        if ($this->postfix_config($request->input('from'), $request->input('to')) != "401") {
         $validator = Validator::make($request->all(), [ 
             'from' => 'required|email|unique:emails,from', 
             'to' => 'required|email', 
@@ -67,13 +66,8 @@ class EmailsController extends Controller
         $email->to = $request->input('to');
         $result =  $email->save();
        
-        if($result==1)
-        {
-
-            $this->postfix_config($email->from, $email->to);
-
-            return response()->json([$this->response_type => $this->response_msg], $this->response_code);
         }
+            return response()->json([$this->response_type => $this->response_msg], $this->response_code);
 
     }
 
@@ -83,10 +77,10 @@ class EmailsController extends Controller
          $email = Email::where('from', $from_add)->first();
          if ($email == null ){
             return abort(401);
-        }
-        else {
+            }
+            else {
          $this->destroy($email->id);
-        }
+            }
 
          return "Forwarder Deleted";
 
@@ -122,23 +116,19 @@ class EmailsController extends Controller
         $email_forwarder = $from. "   ". $to;
         
         $domain = explode('@', $from)[1];
-//        $grep_domain = shell_exec("grep '$domain' /email/relaydomains");
-
-//        dd(in_array($domain, $allowed_domains));
 
         if (in_array($domain, $this->allowed_domains)) {
-
+        
             $grep_domain = shell_exec("grep '$domain' /email/relaydomains");
 
-        if ($grep_domain == null ) { 
+       if ($grep_domain == null ) {
             $relaydomains = $domain . " #domain" . "\n"; 
             $relaydomains .= file_get_contents('/email/relaydomains');
             file_put_contents('/email/relaydomains',  $relaydomains);
             system('sudo docker exec emailserver postmap /etc/postfix/relaydomains');
-            }
-            
+        } 
             $grep_forwarder = shell_exec("grep '$email_forwarder' /email/virtual");
-        
+       
         if ($grep_forwarder == null ){
 
             $current_forwarder = $email_forwarder . "\n";
@@ -155,15 +145,17 @@ class EmailsController extends Controller
 
             $this->response_type = "error";
             $this->response_msg = "Duplicate forwarder";
-            $this->response_code = "404";
+            $this->response_code = "401";
 
                 }
         } else {
 
             $this->response_type = "error";
             $this->response_msg = "Domain not allowed";
-            $this->response_code = "404";
+            $this->response_code = "401";
         } 
+
+    return $this->response_code;
 
     }
 
