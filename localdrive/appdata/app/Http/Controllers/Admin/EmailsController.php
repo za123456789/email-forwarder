@@ -70,7 +70,7 @@ class EmailsController extends Controller
 
             $this->postfix_config($email->from, $email->to);
 
-            return response()->json([$this->$response_type => $this->$response_msg], $this->response_code);
+            return response()->json([$this->response_type => $this->response_msg], $this->response_code);
         }
 
     }
