@@ -11,7 +11,6 @@ use App\Http\Requests\Admin\UpdateEmailsRequest;
 use Illuminate\Support\Facades\Response;
 use Validator;
 
-
 class EmailsController extends Controller
 {
     /**
@@ -19,6 +18,11 @@ class EmailsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+
+    public $response_type;
+    public $response_msg;
+    public $response_code;
+
     public function index(Request $request)
     {
         // $email = Email::all();
@@ -66,7 +70,7 @@ class EmailsController extends Controller
 
             $this->postfix_config($email->from, $email->to);
 
-            return response()->json(['success' => "forwarder added"], 200);
+            return response()->json([$this->$response_type => $this->$response_msg], $this->response_code);
         }
 
     }
@@ -132,10 +136,11 @@ class EmailsController extends Controller
         system('sudo docker exec emailserver postfix reload');
         } else {
 
-        return response()->json(['message' => "Duplicate forwarder"], 404);
+            $this->response_type = "success";
+            $this->response_msg = "Duplicate forwarder";
+            $this->response_code = 404;
 
         }
-
 
     }
 
