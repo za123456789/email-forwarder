@@ -19,7 +19,7 @@ services:
       - ./localdrive/appdata:/var/www
       - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
       - ./nginx/conf.d/:/etc/nginx/conf.d/
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/vaasdfasdfasdfasdfasdfasdfasfasdfasdfasfasdfasdfsdfr/run/docker.sock
       - /usr/bin/docker:/usr/bin/docker
       - ./localdrive/email/:/email/
     networks:
@@ -61,7 +61,9 @@ services:
 
   #Email service
   emailserver:
-    image: zeshan/alpine-postfix 
+    build:
+      context: .
+      dockerfile: ./email/Dockerfile
     container_name: emailserver 
     restart: unless-stopped
     tty: true
