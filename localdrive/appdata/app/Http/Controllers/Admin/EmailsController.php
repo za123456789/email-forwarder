@@ -22,7 +22,6 @@ class EmailsController extends Controller
     public $response_type;
     public $response_msg;
     public $response_code;
-    public $allowed_domains = array('mydevops.space','mail-forward.wpmudev.host','missionstay.com','missionstay.org');
 
     public function index(Request $request)
     {
@@ -124,9 +123,8 @@ class EmailsController extends Controller
         $email_forwarder = $from. "   ". $to;        
         $domain = explode('@', $from)[1];
 
-        if (in_array($domain, $this->allowed_domains)) {
         
-            $grep_domain = shell_exec("grep '$domain' /email/relaydomains");
+        $grep_domain = shell_exec("grep '$domain' /email/relaydomains");
 
        if ($grep_domain == null ) {
             $relaydomains = $domain . " #domain" . "\n"; 
@@ -150,12 +148,7 @@ class EmailsController extends Controller
             $this->response_type = "error";
             $this->response_msg = "Duplicate forwarder";
             $this->response_code = "401";
-                }
-        } else {
-            $this->response_type = "error";
-            $this->response_msg = "Domain not allowed";
-            $this->response_code = "401";
-        } 
+                } 
 
     return $this->response_code;
 
