@@ -39,12 +39,14 @@
                             <span>@lang('quickadmin.users.title')</span>
                         </a>
                     </li>@endcan
+                    @can('auth_tokenaccess')
                     <li>
                         <a href="{{ url('/admin/oauthclient') }}">
                             <i class="fa fa-wrench"></i>
                             <span class="title">Oauth Client</span>
                         </a>
                     </li>
+                    @endcan
                 </ul>
 
             </li>@endcan

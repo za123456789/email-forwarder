@@ -34,7 +34,7 @@ class AuthServiceProvider extends ServiceProvider
         
         // Auth gates for: User management
         Gate::define('user_management_access', function ($user) {
-            return in_array($user->role_id, [1]);
+            return in_array($user->role_id, [1,2]);
         });
 
         // Auth gates for: Roles
@@ -71,6 +71,23 @@ class AuthServiceProvider extends ServiceProvider
             return in_array($user->role_id, [1]);
         });
 
+        // Auth-token
+        Gate::define('auth_tokenaccess', function ($user) {
+            return in_array($user->role_id, [1,2]);
+        });
+        Gate::define('auth_tokencreate', function ($user) {
+            return in_array($user->role_id, [1,2]);
+        });
+        Gate::define('auth_tokenedit', function ($user) {
+            return in_array($user->role_id, [1,2]);
+        });
+        Gate::define('auth_tokenview', function ($user) {
+            return in_array($user->role_id, [1,2]);
+        });
+        Gate::define('auth_tokendelete', function ($user) {
+            return in_array($user->role_id, [1,2]);
+        });
+        
         // Auth gates for: Email
         Gate::define('email_access', function ($user) {
             return in_array($user->role_id, [1, 2]);
