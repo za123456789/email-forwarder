@@ -70,6 +70,21 @@ class EmailsController extends Controller
 
     }
 
+    public function api_show(Request $request){
+         
+        $from_add = $request->from;
+        $email = Email::where('from', $from_add)->first();
+        if ($email == null ){
+            return abort(401);
+        }
+        else {
+         $this->show($email->id);
+        }
+        $email_from = $email->from;
+        $email_to   = $email->to;
+        return "From : $email_from , To : $email_to";
+    }
+
     public function delete(Request $request){
          
          $from_add = $request->from;
@@ -90,7 +105,6 @@ class EmailsController extends Controller
             }
 
             return response()->json(['success' => "Forwarder deleted"], 200);
-
     }
 
     public function updateemail(Request $request)
