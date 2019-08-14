@@ -61,7 +61,10 @@ services:
 
   #Email service
   emailserver:
-    image: zeshan/alpine-postfix 
+    build:
+      context: .
+      dockerfile: ./email/Dockerfile
+#    image: zeshan/alpine-postfix 
     container_name: emailserver 
     restart: unless-stopped
     tty: true
@@ -70,6 +73,7 @@ services:
       SERVICE_TAGS: dev
     ports:
       - "25:25"
+      - "587:587"
     volumes:
       - ./localdrive/email/virtual:/etc/postfix/virtual
       - ./localdrive/email/relaydomains:/etc/postfix/relaydomains
