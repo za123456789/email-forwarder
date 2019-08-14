@@ -12,11 +12,11 @@ RUN        true && \
            (rm "/tmp/"* 2>/dev/null || true) && (rm -rf /var/cache/apk/* 2>/dev/null || true)
 
 # Set up configuration
-COPY       supervisord.conf /etc/supervisord.conf
-COPY       rsyslog.conf /etc/rsyslog.conf
-COPY       opendkim.conf /etc/opendkim/opendkim.conf
-COPY       run.sh /run.sh
-COPY       opendkim.sh /opendkim.sh
+COPY       ./email/supervisord.conf /etc/supervisord.conf
+COPY       ./email/rsyslog.conf /etc/rsyslog.conf
+COPY       ./email/opendkim.conf /etc/opendkim/opendkim.conf
+COPY       ./email/run.sh /run.sh
+COPY       ./email/opendkim.sh /opendkim.sh
 RUN        chmod +x /run.sh /opendkim.sh
 
 # Set up volumes
@@ -26,5 +26,5 @@ VOLUME     [ "/var/spool/postfix", "/etc/postfix", "/etc/opendkim/keys" ]
 USER       root
 WORKDIR    /tmp
 
-EXPOSE     587
+EXPOSE     587 25
 CMD        ["/bin/sh", "-c", "/run.sh"]
