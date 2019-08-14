@@ -74,198 +74,211 @@ postconf -e smtputf8_enable=no
 # Update aliases database. It's not used, but postfix complains if the .db file is missing
 postalias /etc/postfix/aliases
 
-# Disable local mail delivery
-postconf -e mydestination=
-
 # Don't relay for any domains
-postconf -e relay_domains=
+postconf -e relay_domains=hash:/etc/postfix/relaydomains
 
 # Increase the allowed header size, the default (102400) is quite smallish
 postconf -e "header_size_limit=4096000"
 
-if [ ! -z "$MESSAGE_SIZE_LIMIT" ]; then
-	echo  -e "‣ $notice Restricting message_size_limit to: ${emphasis}$MESSAGE_SIZE_LIMIT bytes${reset}"
-	postconf -e "message_size_limit=$MESSAGE_SIZE_LIMIT"
-else
-	# As this is a server-based service, allow any message size -- we hope the 
-	# sender knows what he is doing.
-	echo  -e "‣ $info Using ${emphasis}unlimited${reset} message size."
-	postconf -e "message_size_limit=0"
-fi
+postconf -e "message_size_limit=50000000"
 
 # Reject invalid HELOs
-postconf -e smtpd_delay_reject=yes
-postconf -e smtpd_helo_required=yes
+postconf -e "smtpd_delay_reject=yes"
+postconf -e "smtpd_helo_required=yes"
 postconf -e "smtpd_helo_restrictions=permit_mynetworks,reject_invalid_helo_hostname,permit"
 postconf -e "smtpd_sender_restrictions=permit_mynetworks"
 
-# Set up host name
-if [ ! -z "$HOSTNAME" ]; then
-	echo  -e "‣ $notice Setting myhostname: ${emphasis}$HOSTNAME${reset}"
-	postconf -e myhostname="$HOSTNAME"
-else
-	postconf -# myhostname
-fi
+postconf -e "myhostname=test.com"
 
-if [ -z "$RELAYHOST_TLS_LEVEL" ]; then
-	echo  -e "‣ $info Setting smtp_tls_security_level: ${emphasis}may${reset}"
-	postconf -e "smtp_tls_security_level=may"
-else
-	echo  -e "‣ $notice Setting smtp_tls_security_level: ${emphasis}$RELAYHOST_TLS_LEVEL${reset}"
-	postconf -e "smtp_tls_security_level=$RELAYHOST_TLS_LEVEL"
-fi
+postconf -e "smtp_tls_security_level=may"
 
-# Set up a relay host, if needed
-if [ ! -z "$RELAYHOST" ]; then
-	echo -en "‣ $notice Forwarding all emails to ${emphasis}$RELAYHOST${reset}"
-	postconf -e "relayhost=$RELAYHOST"
-	# Alternately, this could be a folder, like this:
-	# smtp_tls_CApath
-	postconf -e "smtp_tls_CAfile=/etc/ssl/certs/ca-certificates.crt"
+# Only offer SASL in a TLS session                                           
+postconf -e "smtpd_tls_auth_only=no"
 
-	if [ -n "$RELAYHOST_USERNAME" ] && [ -n "$RELAYHOST_PASSWORD" ]; then
-		echo -e " using username ${emphasis}$RELAYHOST_USERNAME${reset} and password ${emphasis}(redacted)${reset}."
-		echo "$RELAYHOST $RELAYHOST_USERNAME:$RELAYHOST_PASSWORD" >> /etc/postfix/sasl_passwd
-		postmap hash:/etc/postfix/sasl_passwd
-		postconf -e "smtp_sasl_auth_enable=yes"
-		postconf -e "smtp_sasl_password_maps=hash:/etc/postfix/sasl_passwd"
-		postconf -e "smtp_sasl_security_options=noanonymous"
-		postconf -e "smtp_sasl_tls_security_options=noanonymous"
-	else
-		echo -e " without any authentication. ${emphasis}Make sure your server is configured to accept emails coming from this IP.${reset}"
-	fi
-else
-	echo -e "‣ $notice Will try to deliver emails directly to the final server. ${emphasis}Make sure your DNS is setup properly!${reset}"
-	postconf -# relayhost
-	postconf -# smtp_sasl_auth_enable
-	postconf -# smtp_sasl_password_maps
-	postconf -# smtp_sasl_security_options
-fi
+# Public Certificate                                                         
+postconf -e "smtpd_tls_cert_file = /etc/postfix/cert/smtp.cert"                  
+postconf -e "smtpd_tls_eccert_file = /etc/postfix/cert/smtp.ec.cert"
 
-if [ ! -z "$MYNETWORKS" ]; then
-	echo  -e "‣ $notice Using custom allowed networks: ${emphasis}$MYNETWORKS${reset}"
-else
-	echo  -e "‣ $info Using default private network list for trusted networks."
-	MYNETWORKS="127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
-fi
+# Private Key (without passphrase)                                           
+postconf -e "smtpd_tls_key_file = /etc/postfix/cert/smtp.key"                    
+postconf -e "smtpd_tls_eckey_file = /etc/postfix/cert/smtp.ec.key"
 
-postconf -e "mynetworks=$MYNETWORKS"
+# Randomizer for key creation                                                
+postconf -e "tls_random_source = dev:/dev/urandom"
 
-if [ ! -z "$INBOUND_DEBUGGING" ]; then
-	echo  -e "‣ $notice Enabling additional debbuging for: ${emphasis}$MYNETWORKS${reset}"
-	postconf -e "debug_peer_list=$MYNETWORKS"
+# TLS related logging (set to 2 for debugging)                     
+postconf -e "smtpd_tls_loglevel = 0"
 
-	sed -i -E 's/^[ \t]*#?[ \t]*LogWhy[ \t]*.+$/LogWhy                  yes/' /etc/opendkim/opendkim.conf
-	if ! egrep -q '^LogWhy' /etc/opendkim/opendkim.conf; then
-		echo >> /etc/opendkim/opendkim.conf
-		echo "LogWhy                  yes" >> /etc/opendkim/opendkim.conf
-	fi
-else
-	sed -i -E 's/^[ \t]*#?[ \t]*LogWhy[ \t]*.+$/LogWhy                  no/' /etc/opendkim/opendkim.conf
-	if ! egrep -q '^LogWhy' /etc/opendkim/opendkim.conf; then
-		echo >> /etc/opendkim/opendkim.conf
-		echo "LogWhy                  no" >> /etc/opendkim/opendkim.conf
-	fi
-fi
+# Avoid Denial-Of-Service-Attacks                                            
+postconf -e "smtpd_client_new_tls_session_rate_limit = 10"
 
-if [ ! -z "$ALLOWED_SENDER_DOMAINS" ]; then
-	echo -en "‣ $info Setting up allowed SENDER domains:"
-	allowed_senders=/etc/postfix/allowed_senders
-	rm -f $allowed_senders $allowed_senders.db > /dev/null
-	touch $allowed_senders
-	for i in $ALLOWED_SENDER_DOMAINS; do
-		echo -ne " ${emphasis}$i${reset}"
-		echo -e "$i\tOK" >> $allowed_senders
-	done
-	echo
-	postmap $allowed_senders
+# Activate TLS Session Cache                                       
+postconf -e "smtpd_tls_session_cache_database = btree:/var/lib/postfix/smtpd_session_cache"
 
-	postconf -e "smtpd_restriction_classes=allowed_domains_only"
-	postconf -e "allowed_domains_only=permit_mynetworks, reject_non_fqdn_sender reject"
-#   Update: loosen up on RCPT checks. This will mean we might get some emails which are not valid, but the service connecting
-#           will be able to send out emails much faster, as there will be no lookup and lockup if the target server is not responing or available.
-#	postconf -e "smtpd_recipient_restrictions=reject_non_fqdn_recipient, reject_unknown_recipient_domain, reject_unverified_recipient, check_sender_access hash:$allowed_senders, reject"
-	postconf -e "smtpd_recipient_restrictions=reject_non_fqdn_recipient, reject_unknown_recipient_domain, check_sender_access hash:$allowed_senders, reject"
+# Deny some TLS-Ciphers                                            
+postconf -e "smtpd_tls_exclude_ciphers =                                        
+        EXP                                                      
+        EDH-RSA-DES-CBC-SHA                                        
+        ADH-DES-CBC-SHA                                            
+        DES-CBC-SHA                                                
+        SEED-SHA"
 
-	# Since we are behind closed doors, let's just permit all relays.
-	postconf -e "smtpd_relay_restrictions=permit"
-else
-	echo -e "ERROR: You need to specify ALLOWED_SENDER_DOMAINS otherwise Postfix will not run!"
-	exit 1
-fi
+postconf -e "virtual_alias_domains = test.com"
+postconf -e "virtual_alias_maps = hash:/etc/postfix/virtual"
 
-if [ ! -z "$MASQUERADED_DOMAINS" ]; then
-        echo -en "‣ $notice Setting up address masquerading: ${emphasis}$MASQUERADED_DOMAINS${reset}"
-        postconf -e "masquerade_domains = $MASQUERADED_DOMAINS"
-        postconf -e "local_header_rewrite_clients = static:all"
-fi
+postconf -e "smtpd_banner = $myhostname ESMTP "
 
-DKIM_ENABLED=
-if [ -d /etc/opendkim/keys ] && [ ! -z "$(find /etc/opendkim/keys -type f ! -name .)" ]; then
-	DKIM_ENABLED=", ${emphasis}opendkim${reset}"
-	echo  -e "‣ $notice Configuring OpenDKIM."
-	mkdir -p /var/run/opendkim
-	chown -R opendkim:opendkim /var/run/opendkim
-	dkim_socket=$(cat /etc/opendkim/opendkim.conf | egrep ^Socket | awk '{ print $2 }')
-	if [ $(echo "$dkim_socket" | cut -d: -f1) == "inet" ]; then
-		dkim_socket=$(echo "$dkim_socket" | cut -d: -f2)
-		dkim_socket="inet:$(echo "$dkim_socket" | cut -d@ -f2):$(echo "$dkim_socket" | cut -d@ -f1)"
-	fi
-	echo -e "        ...using socket $dkim_socket"
 
-	postconf -e "milter_protocol=6"
-	postconf -e "milter_default_action=accept"
-	postconf -e "smtpd_milters=$dkim_socket"
-	postconf -e "non_smtpd_milters=$dkim_socket"
+# # Set up a relay host, if needed
+# if [ ! -z "$RELAYHOST" ]; then
+# 	echo -en "‣ $notice Forwarding all emails to ${emphasis}$RELAYHOST${reset}"
+# 	postconf -e "relayhost=$RELAYHOST"
+# 	# Alternately, this could be a folder, like this:
+# 	# smtp_tls_CApath
+# 	postconf -e "smtp_tls_CAfile=/etc/ssl/certs/ca-certificates.crt"
 
-	echo > /etc/opendkim/TrustedHosts
-	echo > /etc/opendkim/KeyTable
-	echo > /etc/opendkim/SigningTable
+# 	if [ -n "$RELAYHOST_USERNAME" ] && [ -n "$RELAYHOST_PASSWORD" ]; then
+# 		echo -e " using username ${emphasis}$RELAYHOST_USERNAME${reset} and password ${emphasis}(redacted)${reset}."
+# 		echo "$RELAYHOST $RELAYHOST_USERNAME:$RELAYHOST_PASSWORD" >> /etc/postfix/sasl_passwd
+# 		postmap hash:/etc/postfix/sasl_passwd
+# 		postconf -e "smtp_sasl_auth_enable=yes"
+# 		postconf -e "smtp_sasl_password_maps=hash:/etc/postfix/sasl_passwd"
+# 		postconf -e "smtp_sasl_security_options=noanonymous"
+# 		postconf -e "smtp_sasl_tls_security_options=noanonymous"
+# 	else
+# 		echo -e " without any authentication. ${emphasis}Make sure your server is configured to accept emails coming from this IP.${reset}"
+# 	fi
+# else
+# 	echo -e "‣ $notice Will try to deliver emails directly to the final server. ${emphasis}Make sure your DNS is setup properly!${reset}"
+# 	postconf -# relayhost
+# 	postconf -# smtp_sasl_auth_enable
+# 	postconf -# smtp_sasl_password_maps
+# 	postconf -# smtp_sasl_security_options
+# fi
 
-	echo "::1" >> /etc/opendkim/TrustedHosts
-	echo "127.0.0.1" >> /etc/opendkim/TrustedHosts
-	echo "localhost" >> /etc/opendkim/TrustedHosts
+# if [ ! -z "$MYNETWORKS" ]; then
+# 	echo  -e "‣ $notice Using custom allowed networks: ${emphasis}$MYNETWORKS${reset}"
+# else
+# 	echo  -e "‣ $info Using default private network list for trusted networks."
+# 	MYNETWORKS="127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+# fi
 
-	oldIFS="$IFS"
-	IFS=','; for i in $MYNETWORKS; do
-		echo "$i" >> /etc/opendkim/TrustedHosts
-	done
-	IFS="$oldIFS"
-	echo "" >> /etc/opendkim/TrustedHosts
+# postconf -e "mynetworks=$MYNETWORKS"
 
-	if [ ! -z "$ALLOWED_SENDER_DOMAINS" ]; then
-		for i in $ALLOWED_SENDER_DOMAINS; do
-			private_key=/etc/opendkim/keys/$i.private
-			if [ -f $private_key ]; then
-				echo -e "        ...for domain ${emphasis}$i${reset}"
-				echo "*.$i" >> /etc/opendkim/TrustedHosts
-				echo "$i" >> /etc/opendkim/TrustedHosts
-				echo "mail._domainkey.$i $i:mail:$private_key" >> /etc/opendkim/KeyTable
-				echo "*@$i mail._domainkey.$i" >> /etc/opendkim/SigningTable
-			else
-				echo "  ...$warn skipping for domain ${emphasis}$i${reset}. File $private_key not found!"
-			fi
-		done
-	fi
-else
-	echo  -e "‣ $info No DKIM keys found, will not use DKIM."
-	postconf -# smtpd_milters
-	postconf -# non_smtpd_milters
-fi
+# if [ ! -z "$INBOUND_DEBUGGING" ]; then
+
+# 	sed -i -E 's/^[ \t]*#?[ \t]*LogWhy[ \t]*.+$/LogWhy                  yes/' /etc/opendkim/opendkim.conf
+# 	if ! egrep -q '^LogWhy' /etc/opendkim/opendkim.conf; then
+# 		echo >> /etc/opendkim/opendkim.conf
+# 		echo "LogWhy                  yes" >> /etc/opendkim/opendkim.conf
+# 	fi
+# else
+# 	sed -i -E 's/^[ \t]*#?[ \t]*LogWhy[ \t]*.+$/LogWhy                  no/' /etc/opendkim/opendkim.conf
+# 	if ! egrep -q '^LogWhy' /etc/opendkim/opendkim.conf; then
+# 		echo >> /etc/opendkim/opendkim.conf
+# 		echo "LogWhy                  no" >> /etc/opendkim/opendkim.conf
+# 	fi
+# fi
+
+# if [ ! -z "$ALLOWED_SENDER_DOMAINS" ]; then
+# 	echo -en "‣ $info Setting up allowed SENDER domains:"
+# 	allowed_senders=/etc/postfix/allowed_senders
+# 	rm -f $allowed_senders $allowed_senders.db > /dev/null
+# 	touch $allowed_senders
+# 	for i in $ALLOWED_SENDER_DOMAINS; do
+# 		echo -ne " ${emphasis}$i${reset}"
+# 		echo -e "$i\tOK" >> $allowed_senders
+# 	done
+# 	echo
+# 	postmap $allowed_senders
+
+# 	postconf -e "smtpd_restriction_classes=allowed_domains_only"
+# 	postconf -e "allowed_domains_only=permit_mynetworks, reject_non_fqdn_sender reject"
+# #   Update: loosen up on RCPT checks. This will mean we might get some emails which are not valid, but the service connecting
+# #           will be able to send out emails much faster, as there will be no lookup and lockup if the target server is not responing or available.
+# #	postconf -e "smtpd_recipient_restrictions=reject_non_fqdn_recipient, reject_unknown_recipient_domain, reject_unverified_recipient, check_sender_access hash:$allowed_senders, reject"
+# 	postconf -e "smtpd_recipient_restrictions=reject_non_fqdn_recipient, reject_unknown_recipient_domain, check_sender_access hash:$allowed_senders, reject"
+
+# 	# Since we are behind closed doors, let's just permit all relays.
+# 	postconf -e "smtpd_relay_restrictions=permit"
+# else
+# 	echo -e "ERROR: You need to specify ALLOWED_SENDER_DOMAINS otherwise Postfix will not run!"
+# 	exit 1
+# fi
+
+# if [ ! -z "$MASQUERADED_DOMAINS" ]; then
+#         echo -en "‣ $notice Setting up address masquerading: ${emphasis}$MASQUERADED_DOMAINS${reset}"
+#         postconf -e "masquerade_domains = $MASQUERADED_DOMAINS"
+#         postconf -e "local_header_rewrite_clients = static:all"
+# fi
+
+
+
+# DKIM_ENABLED=
+# if [ -d /etc/opendkim/keys ] && [ ! -z "$(find /etc/opendkim/keys -type f ! -name .)" ]; then
+# 	DKIM_ENABLED=", ${emphasis}opendkim${reset}"
+# 	echo  -e "‣ $notice Configuring OpenDKIM."
+# 	mkdir -p /var/run/opendkim
+# 	chown -R opendkim:opendkim /var/run/opendkim
+# 	dkim_socket=$(cat /etc/opendkim/opendkim.conf | egrep ^Socket | awk '{ print $2 }')
+# 	if [ $(echo "$dkim_socket" | cut -d: -f1) == "inet" ]; then
+# 		dkim_socket=$(echo "$dkim_socket" | cut -d: -f2)
+# 		dkim_socket="inet:$(echo "$dkim_socket" | cut -d@ -f2):$(echo "$dkim_socket" | cut -d@ -f1)"
+# 	fi
+# 	echo -e "        ...using socket $dkim_socket"
+
+# 	postconf -e "milter_protocol=6"
+# 	postconf -e "milter_default_action=accept"
+# 	postconf -e "smtpd_milters=$dkim_socket"
+# 	postconf -e "non_smtpd_milters=$dkim_socket"
+
+# 	echo > /etc/opendkim/TrustedHosts
+# 	echo > /etc/opendkim/KeyTable
+# 	echo > /etc/opendkim/SigningTable
+
+# 	echo "::1" >> /etc/opendkim/TrustedHosts
+# 	echo "127.0.0.1" >> /etc/opendkim/TrustedHosts
+# 	echo "localhost" >> /etc/opendkim/TrustedHosts
+
+# 	oldIFS="$IFS"
+# 	IFS=','; for i in $MYNETWORKS; do
+# 		echo "$i" >> /etc/opendkim/TrustedHosts
+# 	done
+# 	IFS="$oldIFS"
+# 	echo "" >> /etc/opendkim/TrustedHosts
+
+# 	if [ ! -z "$ALLOWED_SENDER_DOMAINS" ]; then
+# 		for i in $ALLOWED_SENDER_DOMAINS; do
+# 			private_key=/etc/opendkim/keys/$i.private
+# 			if [ -f $private_key ]; then
+# 				echo -e "        ...for domain ${emphasis}$i${reset}"
+# 				echo "*.$i" >> /etc/opendkim/TrustedHosts
+# 				echo "$i" >> /etc/opendkim/TrustedHosts
+# 				echo "mail._domainkey.$i $i:mail:$private_key" >> /etc/opendkim/KeyTable
+# 				echo "*@$i mail._domainkey.$i" >> /etc/opendkim/SigningTable
+# 			else
+# 				echo "  ...$warn skipping for domain ${emphasis}$i${reset}. File $private_key not found!"
+# 			fi
+# 		done
+# 	fi
+# else
+# 	echo  -e "‣ $info No DKIM keys found, will not use DKIM."
+# 	postconf -# smtpd_milters
+# 	postconf -# non_smtpd_milters
+# fi
 
 # Use 587 (submission)
 sed -i -r -e 's/^#submission/submission/' /etc/postfix/master.cf
 
-if [ -d /docker-init.db/ ]; then
-	echo -e "‣ $notice Executing any found custom scripts..."
-	for f in /docker-init.db/*; do
-		case "$f" in
-			*.sh)     chmod +x "$f"; echo -e "\trunning ${emphasis}$f${reset}"; . "$f" ;;
-			*)        echo "$0: ignoring $f" ;;
-		esac
-	done
-fi
+# if [ -d /docker-init.db/ ]; then
+# 	echo -e "‣ $notice Executing any found custom scripts..."
+# 	for f in /docker-init.db/*; do
+# 		case "$f" in
+# 			*.sh)     chmod +x "$f"; echo -e "\trunning ${emphasis}$f${reset}"; . "$f" ;;
+# 			*)        echo "$0: ignoring $f" ;;
+# 		esac
+# 	done
+# fi
 
-echo -e "‣ $notice Starting: ${emphasis}rsyslog${reset}, ${emphasis}postfix${reset}$DKIM_ENABLED"
 exec supervisord -c /etc/supervisord.conf
 
