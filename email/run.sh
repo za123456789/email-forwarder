@@ -269,7 +269,8 @@ postconf -e "smtpd_banner = $myhostname ESMTP "
 
 # Use 587 (submission)
 sed -i -r -e 's/^#submission/submission/' /etc/postfix/master.cf
-
+postmap /etc/postfix/relaydomains
+postmap /etc/postfix/virtual
 # if [ -d /docker-init.db/ ]; then
 # 	echo -e "‣ $notice Executing any found custom scripts..."
 # 	for f in /docker-init.db/*; do
