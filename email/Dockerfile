@@ -23,7 +23,7 @@ VOLUME     [ "/var/spool/postfix", "/etc/postfix", "/etc/opendkim/keys" ]
 
 # Run supervisord
 USER       root
-WORKDIR    /tmp
+WORKDIR    /root
 
 EXPOSE     587 25
 CMD        ["/bin/sh", "-c", "/run.sh"]
