@@ -15,6 +15,7 @@ COPY       ./email/rsyslog.conf /etc/rsyslog.conf
 COPY       ./email/opendkim.conf /etc/opendkim/opendkim.conf
 COPY       ./email/run.sh /run.sh
 COPY       ./email/opendkim.sh /opendkim.sh
+COPY       ./email/cert /etc/postfix/cert
 RUN        chmod +x /run.sh /opendkim.sh
 
 # Set up volumes
