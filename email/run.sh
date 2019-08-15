@@ -86,10 +86,7 @@ postconf -e "smtpd_sasl_auth_enable = yes"
 
 postconf -e "smtpd_sasl_security_options = noanonymous"
 
-postconf -e "smtpd_recipient_restrictions =
-   				permit_sasl_authenticated,
-   				permit_mynetworks,
-   				reject_unauth_destination"
+postconf -e "smtpd_recipient_restrictions = permit_sasl_authenticated, permit_mynetworks, reject_unauth_destination"
 
 postconf -e "smtpd_tls_security_level=may"
 
@@ -116,12 +113,7 @@ postconf -e "smtpd_client_new_tls_session_rate_limit = 10"
 postconf -e "smtpd_tls_session_cache_database = btree:/var/lib/postfix/smtpd_session_cache"
 
 # Deny some TLS-Ciphers                                            
-postconf -e "smtpd_tls_exclude_ciphers =                                        
-        EXP                                                      
-        EDH-RSA-DES-CBC-SHA                                        
-        ADH-DES-CBC-SHA                                            
-        DES-CBC-SHA                                                
-        SEED-SHA"
+postconf -e "smtpd_tls_exclude_ciphers = EXP EDH-RSA-DES-CBC-SHA ADH-DES-CBC-SHA DES-CBC-SHA SEED-SHA"
 
 postconf -e "smtp_tls_security_level = may"
 
