@@ -69,31 +69,32 @@ chown root: /var/spool/postfix/
 chown root: /var/spool/postfix/pid
 
 # Disable SMTPUTF8, because libraries (ICU) are missing in alpine
-postconf -e smtputf8_enable=no
+postconf -e "smtputf8_enable = no"
 
 # Update aliases database. It's not used, but postfix complains if the .db file is missing
 postalias /etc/postfix/aliases
 
 # Don't relay for any domains
-postconf -e relay_domains=hash:/etc/postfix/relaydomains
+postconf -e "relay_domains = hash:/etc/postfix/relaydomains"
 
 # Increase the allowed header size, the default (102400) is quite smallish
-postconf -e "header_size_limit=4096000"
+postconf -e "header_size_limit = 4096000"
 
-postconf -e "message_size_limit=50000000"
+postconf -e "message_size_limit = 50000000"
 
-# Reject invalid HELOs
-postconf -e "smtpd_delay_reject=yes"
-postconf -e "smtpd_helo_required=yes"
-postconf -e "smtpd_helo_restrictions=permit_mynetworks,reject_invalid_helo_hostname,permit"
-postconf -e "smtpd_sender_restrictions=permit_mynetworks"
+postconf -e "smtpd_sasl_auth_enable = yes"
 
-postconf -e "myhostname=test.com"
+postconf -e "smtpd_sasl_security_options = noanonymous"
 
-postconf -e "smtp_tls_security_level=may"
+postconf -e "smtpd_recipient_restrictions =
+   				permit_sasl_authenticated,
+   				permit_mynetworks,
+   				reject_unauth_destination"
+
+postconf -e "smtpd_tls_security_level=may"
 
 # Only offer SASL in a TLS session                                           
-postconf -e "smtpd_tls_auth_only=no"
+postconf -e "smtpd_tls_auth_only = no"
 
 # Public Certificate                                                         
 postconf -e "smtpd_tls_cert_file = /etc/postfix/cert/smtp.cert"                  
@@ -103,7 +104,6 @@ postconf -e "smtpd_tls_eccert_file = /etc/postfix/cert/smtp.ec.cert"
 postconf -e "smtpd_tls_key_file = /etc/postfix/cert/smtp.key"                    
 postconf -e "smtpd_tls_eckey_file = /etc/postfix/cert/smtp.ec.key"
 
-# Randomizer for key creation                                                
 postconf -e "tls_random_source = dev:/dev/urandom"
 
 # TLS related logging (set to 2 for debugging)                     
@@ -123,10 +123,27 @@ postconf -e "smtpd_tls_exclude_ciphers =
         DES-CBC-SHA                                                
         SEED-SHA"
 
+postconf -e "smtp_tls_security_level = may"
+
+# Reject invalid HELOs
+postconf -e "smtpd_delay_reject=yes"
+postconf -e "smtpd_helo_required=yes"
+postconf -e "smtpd_helo_restrictions=permit_mynetworks,reject_invalid_helo_hostname,permit"
+postconf -e "smtpd_sender_restrictions=permit_mynetworks"
+
+postconf -e "myhostname = test.com"
+
+# Randomizer for key creation                                                
+
+
+
+
+
+
 postconf -e "virtual_alias_domains = test.com"
 postconf -e "virtual_alias_maps = hash:/etc/postfix/virtual"
 
-postconf -e "smtpd_banner = $myhostname ESMTP "
+postconf -e "smtpd_banner = \$myhostname ESMTP "
 
 
 # # Set up a relay host, if needed
