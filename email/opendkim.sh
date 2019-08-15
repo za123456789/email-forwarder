@@ -6,5 +6,3 @@ elif [ -z "$(find /etc/opendkim/keys -type f ! -name .)" ]; then
 else
     /usr/sbin/opendkim -D -f -x /etc/opendkim/opendkim.conf
 fi
-
-
