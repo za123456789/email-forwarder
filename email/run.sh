@@ -293,4 +293,5 @@ postmap /etc/postfix/virtual
 # fi
 
 exec supervisord -c /etc/supervisord.conf
+exec spamd --username spamassassin --nouser-config --syslog=/var/log/spamd.log -pidfile /var/run/spamassassin/spamd.pid --helper-home-dir /var/lib/spamassassin --ip-address 0.0.0.0:737 --allowed-ips 0.0.0.0/0
 

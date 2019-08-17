@@ -9,11 +9,16 @@ RUN        true && \
            					  clamav-libunrar 	\           
            					  ca-certificates 	\
            					  tzdata 			\
-           					  supervisor 		\
+           					  supervisor 		 \
            					  rsyslog 		 && \	
 
            apk add --no-cache --upgrade musl musl-utils && \
            (rm "/tmp/"* 2>/dev/null || true) && (rm -rf /var/cache/apk/* 2>/dev/null || true)
+
+RUN         addgroup spamassassin && \        
+            adduser -S -D -G spamassassin -h /var/lib/spamassassin/ spamassassin && \
+            apk add --no-cache razor spamassassin
+
 
 # Set up configuration
 COPY       ./email/supervisord.conf /etc/supervisord.conf
