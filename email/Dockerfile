@@ -10,7 +10,8 @@ RUN        true && \
            					  ca-certificates 	\
            					  tzdata 			\
            					  supervisor 		\
-           					  rsyslog 			
+           					  rsyslog 		 && \	
+
            apk add --no-cache --upgrade musl musl-utils && \
            (rm "/tmp/"* 2>/dev/null || true) && (rm -rf /var/cache/apk/* 2>/dev/null || true)
 

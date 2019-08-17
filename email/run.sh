@@ -57,7 +57,7 @@ if [ ! -z "$TZ" ]; then
 		ln -snf "$TZ_FILE" /etc/localtime
 		echo "$TZ" > /etc/timezone
 	else
-		echo  -e "‣ $warn Cannot set timezone to: ${emphasis}$TZ${reset} -- this timezone does not exist."
+		echo  -e "‣ $warn Cannot set timezoneto: ${ emphasis}$TZ${reset} -- this timezone does not exist."
 	fi
 else
 	echo  -e "‣ $info Not setting any timezone for the container"
@@ -86,7 +86,9 @@ postconf -e "smtpd_sasl_auth_enable = yes"
 
 postconf -e "smtpd_sasl_security_options = noanonymous"
 
-postconf -e "smtpd_recipient_restrictions = permit_sasl_authenticated, permit_mynetworks, reject_unauth_destination"
+postconf -e "disable_vrfy_command = yes"
+
+postconf -e "smtpd_recipient_restrictions = reject_invalid_hostname, reject_non_fqdn_hostname, reject_non_fqdn_sender, reject_non_fqdn_recipient, reject_unknown_sender_domain, reject_unknown_recipient_domain, permit_sasl_authenticated, permit_mynetworks, reject_unauth_destination, permit"
 
 postconf -e "smtpd_tls_security_level=may"
 
