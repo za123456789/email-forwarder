@@ -37,9 +37,21 @@ COPY       ./email/opendkim.conf /etc/opendkim/opendkim.conf
 COPY       ./email/run.sh /run.sh
 COPY       ./email/opendkim.sh /opendkim.sh
 COPY       ./email/cert /etc/postfix/cert
+
+# clamsmtp 
 COPY       ./email/clamsmtp.txt /clamsmtp.txt
-RUN        chmod +x /run.sh /opendkim.sh && \
-           cat /clamsmtp.txt >> /etc/postfix/master.cf
+RUN        mkdir /etc/postfix/scripts
+COPY       ./email/virus_action.sh /etc/postfix/scripts/virus_action.sh
+
+RUN        chmod +x /run.sh /opendkim.sh /etc/postfix/scripts/virus_action.sh && \
+           chown -R clamav:clamav /etc/postfix/scripts && \
+           cat /clamsmtp.txt >> /etc/postfix/master.cf 
+
+RUN        sed -i 's/^OutAddress\: 10026/OutAddress\: 0.0.0.0\:10026/g' /etc/clamsmtpd.conf && \
+           sed -i 's/^#TempDirectory\: \/tmp/TempDirectory\: \/tmp/g' /etc/clamsmtpd.conf && \
+           sed -i 's/^#Action\: drop/Action\: drop/g' /etc/clamsmtpd.conf && \
+           sed -i 's/^#Quarantine\: off/Quarantine\: on/g' /etc/clamsmtpd.conf && \
+           echo "VirusAction: /etc/postfix/scripts/virus_action.sh" >> /etc/clamsmtpd.conf
 
 # Set up volumes
 VOLUME     [ "/var/spool/postfix", "/etc/postfix", "/etc/opendkim/keys" ]
