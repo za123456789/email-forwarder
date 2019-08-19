@@ -18,10 +18,18 @@ RUN        addgroup spamassassin && \
            adduser -S -D -G spamassassin -h /var/lib/spamassassin/ spamassassin && \
            apk add --no-cache razor spamassassin 
 
+RUN        mkdir /run/clamav && \
+           chown clamav:clamav /run/clamav && \
+           chmod 750 /run/clamav
+
+RUN        sed -i 's/^#Foreground/Foreground/g' /etc/clamav/clamd.conf && \
+           echo "TCPSocket 3310" >> /etc/clamav/clamd.conf 
+
 RUN        sa-update && \
            freshclam
 
 # Set up configuration
+
 COPY       ./email/supervisord.conf /etc/supervisord.conf
 COPY       ./email/rsyslog.conf /etc/rsyslog.conf
 COPY       ./email/opendkim.conf /etc/opendkim/opendkim.conf
