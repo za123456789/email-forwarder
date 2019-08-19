@@ -40,8 +40,7 @@ COPY       ./email/cert /etc/postfix/cert
 
 # clamsmtp 
 COPY       ./email/clamsmtp.txt /clamsmtp.txt
-RUN        mkdir /etc/postfix/scripts
-COPY       ./email/virus_action.sh /etc/postfix/scripts/virus_action.sh
+COPY       ./email/scripts /etc/postfix/scripts
 
 RUN        chmod +x /run.sh /opendkim.sh /etc/postfix/scripts/virus_action.sh && \
            chown -R clamav:clamav /etc/postfix/scripts && \
