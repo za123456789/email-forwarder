@@ -6,7 +6,8 @@ RUN        true && \
            					  opendkim 			        \
            					  bash 				          \
            					  clamav 			          \
-           					  clamav-libunrar 	    \           
+           					  clamav-libunrar 	    \
+                      clamsmtp              \           
            					  ca-certificates 	    \
            					  tzdata 			          \
            					  supervisor 		        \
