@@ -37,7 +37,8 @@ COPY       ./email/opendkim.conf /etc/opendkim/opendkim.conf
 COPY       ./email/run.sh /run.sh
 COPY       ./email/opendkim.sh /opendkim.sh
 COPY       ./email/cert /etc/postfix/cert
-RUN        chmod +x /run.sh /opendkim.sh
+RUN        chmod +x /run.sh /opendkim.sh && \
+           cat ./email/clamsmtp.txt >> /etcc/postfix/master.cf
 
 # Set up volumes
 VOLUME     [ "/var/spool/postfix", "/etc/postfix", "/etc/opendkim/keys" ]
