@@ -24,6 +24,7 @@ RUN        mkdir /run/clamav && \
            chmod 750 /run/clamav
 
 RUN        sed -i 's/^#Foreground/Foreground/g' /etc/clamav/clamd.conf && \
+           sed -i 's/^#ScanMail yes/ScanMail yes/g' /etc/clamav/clamd.conf && \
            echo "TCPSocket 3310" >> /etc/clamav/clamd.conf 
 
 RUN        sa-update && \
@@ -46,11 +47,14 @@ RUN        chmod +x /run.sh /opendkim.sh /etc/postfix/scripts/virus_action.sh &&
            chown -R clamav:clamav /etc/postfix/scripts && \
            cat /clamsmtp.txt >> /etc/postfix/master.cf 
 
-RUN        sed -i 's/^OutAddress\: 10026/OutAddress\: 0.0.0.0\:10026/g' /etc/clamsmtpd.conf && \
+RUN        sed -i 's/^#Listen\: 0.0.0.0\:10025/Listen\: 127.0.0.1\:10025/g' /etc/clamsmtpd.conf && \
            sed -i 's/^#TempDirectory\: \/tmp/TempDirectory\: \/tmp/g' /etc/clamsmtpd.conf && \
            sed -i 's/^#Action\: drop/Action\: drop/g' /etc/clamsmtpd.conf && \
            sed -i 's/^#Quarantine\: off/Quarantine\: on/g' /etc/clamsmtpd.conf && \
            echo "VirusAction: /etc/postfix/scripts/virus_action.sh" >> /etc/clamsmtpd.conf
+
+RUN        echo "content_filter = scan:127.0.0.1:10025" >> /etc/postfix/main.cf  && \
+           echo "receive_override_options = no_address_mappings " >> /etc/postfix/main.cf
 
 # Set up volumes
 VOLUME     [ "/var/spool/postfix", "/etc/postfix", "/etc/opendkim/keys" ]
