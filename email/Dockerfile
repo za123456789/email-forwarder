@@ -54,7 +54,7 @@ RUN        sed -i 's/^#Listen\: 0.0.0.0\:10025/Listen\: 127.0.0.1\:10025/g' /etc
            echo "VirusAction: /etc/postfix/scripts/virus_action.sh" >> /etc/clamsmtpd.conf
 
 RUN        echo "content_filter = scan:127.0.0.1:10025" >> /etc/postfix/main.cf  && \
-           echo "receive_override_options = no_address_mappings " >> /etc/postfix/main.cf
+           echo "receive_override_options = no_address_mappings" >> /etc/postfix/main.cf
 
 # Set up volumes
 VOLUME     [ "/var/spool/postfix", "/etc/postfix", "/etc/opendkim/keys" ]
