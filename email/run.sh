@@ -66,7 +66,7 @@ postconf -e "smtpd_helo_required=yes"
 postconf -e "smtpd_helo_restrictions=permit_mynetworks,reject_invalid_helo_hostname,permit"
 postconf -e "smtpd_sender_restrictions=permit_mynetworks"
 
-postconf -e "myhostname = test.com"
+postconf -e "myhostname = mail-forward.wpmudev.host"
 
 postconf -e "virtual_alias_domains = test.com"
 postconf -e "virtual_alias_maps = hash:/etc/postfix/virtual"

@@ -123,7 +123,7 @@ class EmailsController extends Controller
 
             $grep_forwarder = shell_exec("grep ^'$request->from' /email/virtual");
             $grep_array = explode(' ', $grep_forwarder);
-            $new_forwarder = $grep_array[0] ."   ". $request->to; 
+            $new_forwarder = $grep_array[0] ."   ". $request->to ."\n"; 
             $content = file_get_contents('/email/virtual'); 
             $content = str_replace($grep_forwarder, $new_forwarder, $content);
             file_put_contents ('/email/virtual', $content);        
