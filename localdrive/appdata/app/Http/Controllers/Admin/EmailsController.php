@@ -94,8 +94,10 @@ class EmailsController extends Controller
             return response()->json(['message' => "Forwarder not found"], 404);
             }
             else {
-                $this->destroy($email->id);
-            $grep_forwarder = shell_exec("grep '$request->from' /email/virtual");
+//                $this->destroy($email->id);
+                $email->forceDelete();
+
+            $grep_forwarder = shell_exec("grep ^'$request->from' /email/virtual");
             $grep_array = explode(' ', $grep_forwarder);
             $content = file_get_contents('/email/virtual'); 
             $content = str_replace($grep_forwarder, '', $content);
@@ -119,7 +121,7 @@ class EmailsController extends Controller
         else {
             $email->update($request->all());
 
-            $grep_forwarder = shell_exec("grep '$request->from' /email/virtual");
+            $grep_forwarder = shell_exec("grep ^'$request->from' /email/virtual");
             $grep_array = explode(' ', $grep_forwarder);
             $new_forwarder = $grep_array[0] ."   ". $request->to; 
             $content = file_get_contents('/email/virtual'); 
@@ -139,7 +141,7 @@ class EmailsController extends Controller
         $domain = explode('@', $from)[1];
 
         
-        $grep_domain = shell_exec("grep '$domain' /email/relaydomains");
+        $grep_domain = shell_exec("grep ^'$domain' /email/relaydomains");
 
        if ($grep_domain == null ) {
             $relaydomains = $domain . " #domain" . "\n"; 
@@ -147,7 +149,7 @@ class EmailsController extends Controller
             file_put_contents('/email/relaydomains',  $relaydomains);
             system('sudo docker exec emailserver postmap /etc/postfix/relaydomains');
         } 
-            $grep_forwarder = shell_exec("grep '$email_forwarder' /email/virtual");
+            $grep_forwarder = shell_exec("grep ^'$email_forwarder' /email/virtual");
        
         if ($grep_forwarder == null ){
 
@@ -246,7 +248,7 @@ class EmailsController extends Controller
         $email = Email::findOrFail($id);
         $email->update($request->all());
 
-        $grep_forwarder = system("grep '$email->from' /email/virtual");
+        $grep_forwarder = system("grep ^'$email->from' /email/virtual");
         $grep_array = explode(' ', $grep_forwarder);
         $new_forwarder = $grep_array[0] ."   ". $request->to; 
         $content = file_get_contents('/email/virtual'); 
@@ -289,7 +291,7 @@ class EmailsController extends Controller
         //     return abort(401);
         // }
         $email = Email::findOrFail($id);
-        $email->delete();
+        $email->forceDelete();
 
         return redirect()->route('admin.emails.index');
     }
