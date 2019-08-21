@@ -27,8 +27,7 @@ RUN        sed -i 's/^#Foreground/Foreground/g' /etc/clamav/clamd.conf && \
            sed -i 's/^#ScanMail yes/ScanMail yes/g' /etc/clamav/clamd.conf && \
            echo "TCPSocket 3310" >> /etc/clamav/clamd.conf 
 
-RUN        sa-update && \
-           freshclam
+RUN        sa-update 
 
 # Set up configuration
 
