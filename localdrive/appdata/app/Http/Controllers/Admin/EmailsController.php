@@ -88,7 +88,8 @@ class EmailsController extends Controller
     public function delete(Request $request){
          
          $from_add = $request->from;
-         $email = Email::where('from', $from_add)->first();
+         $email = Email::where('from', $from_add)
+         ->whereNull('deleted_at')->first();
          if ($email == null ){
             return response()->json(['message' => "Forwarder not found"], 404);
             }
@@ -97,7 +98,7 @@ class EmailsController extends Controller
             $grep_forwarder = shell_exec("grep '$request->from' /email/virtual");
             $grep_array = explode(' ', $grep_forwarder);
             $content = file_get_contents('/email/virtual'); 
-            $content = str_replace($grep_forwarder, ' ', $content);
+            $content = str_replace($grep_forwarder, '', $content);
             file_put_contents ('/email/virtual', $content);        
             system('sudo docker exec emailserver postmap /etc/postfix/virtual');            
             system('sudo docker exec emailserver postfix reload');
