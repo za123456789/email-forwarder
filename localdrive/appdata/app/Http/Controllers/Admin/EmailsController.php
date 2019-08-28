@@ -143,7 +143,7 @@ class EmailsController extends Controller
  
         if (($mx[0] != null) && (strpos($mx[1], 'mail-forward.wpmudev.host') !== false))
         {
-        return response()->json(['success' => "MX record matched"], 200);
+        return response()->json(['success' => "MX matched"], 200);
         } else {
         return response()->json(['message' => "MX not matched"], 404);
         }
