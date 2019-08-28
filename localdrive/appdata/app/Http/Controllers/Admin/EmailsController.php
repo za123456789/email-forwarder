@@ -135,6 +135,20 @@ class EmailsController extends Controller
             return response()->json(['success' => "Forwarder updated"], 200);
     }
 
+    public function mx_check_record(Request $request) 
+    {    
+        $domain = $request->domain;
+        $check_dns = shell_exec("dig '$domain' mx +short");
+        $mx = explode(' ', $check_dns);
+ 
+        if (($mx[0] != null) && (strpos($mx[1], 'mail-forward.wpmudev.host') !== false))
+        {
+        return response()->json(['success' => "MX record matched"], 200);
+        } else {
+        return response()->json(['message' => "MX not matched"], 404);
+        }
+    }
+
     public function postfix_config($from, $to){
 
         $email_forwarder = $from. "   ". $to;        

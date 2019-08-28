@@ -18,6 +18,7 @@ Route::group(['middleware' => 'auth:api'], function(){
 		Route::post("/email/update" , "Admin\EmailsController@updateemail");
 		Route::post("/email/delete" , "Admin\EmailsController@delete");
 		Route::get("/email/show" , "Admin\EmailsController@api_show");
+		Route::get("/email/mx" , "Admin\EmailsController@mx_check_record");		
 });
 
 Route::get("/" , "Admin\EmailsController@index");
