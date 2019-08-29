@@ -144,17 +144,25 @@ class EmailsController extends Controller
 //      dd($mx);
             if ((count($mx) > 2 ) && (strpos($check_dns, 'mail-forward.wpmudev.host') !== false))
             {
-                return response()->json(['error' => "MX found with multiple records"], 409);                    
+                $this->response_type = "error";
+                $this->response_msg = "MX found with multiple records";
+                $this->response_code = "409";                                    
             }
             elseif (($mx[0] != null) && (strpos($mx[1], 'mail-forward.wpmudev.host') !== false))
             {
-                return response()->json(['success' => "MX matched"], 200);
+                $this->response_type = "success";
+                $this->response_msg = "MX matched";
+                $this->response_code = "200";
             }
             else
             {
-                return response()->json(['message' => "MX not matched"], 404);
+                $this->response_type = "message";
+                $this->response_msg = "MX not matched";
+                $this->response_code = "404";
+
             }
 
+        return response()->json([$this->response_type => $this->response_msg], $this->response_code);
     }
 
     public function postfix_config($from, $to){
