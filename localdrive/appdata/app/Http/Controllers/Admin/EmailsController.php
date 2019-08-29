@@ -139,14 +139,22 @@ class EmailsController extends Controller
     {    
         $domain = $request->domain;
         $check_dns = shell_exec("dig '$domain' mx +short");
+//      dd(strpos($check_dns, 'mail-forward.wpmudev.host'));
         $mx = explode(' ', $check_dns);
- 
-        if (($mx[0] != null) && (strpos($mx[1], 'mail-forward.wpmudev.host') !== false))
-        {
-        return response()->json(['success' => "MX matched"], 200);
-        } else {
-        return response()->json(['message' => "MX not matched"], 404);
-        }
+//      dd($mx);
+            if ((count($mx) > 2 ) && (strpos($check_dns, 'mail-forward.wpmudev.host') !== false))
+            {
+                return response()->json(['error' => "MX found with multiple records"], 409);                    
+            }
+            elseif (($mx[0] != null) && (strpos($mx[1], 'mail-forward.wpmudev.host') !== false))
+            {
+                return response()->json(['success' => "MX matched"], 200);
+            }
+            else
+            {
+                return response()->json(['message' => "MX not matched"], 404);
+            }
+
     }
 
     public function postfix_config($from, $to){
