@@ -3,3 +3,4 @@ vendor
 storage/framework/sessions/*
 storage/framework/cache/*
 storage/logs/*
+node_modules

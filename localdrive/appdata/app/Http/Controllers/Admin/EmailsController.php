@@ -11,7 +11,6 @@ use App\Http\Requests\Admin\UpdateEmailsRequest;
 use Illuminate\Support\Facades\Response;
 use Validator;
 
-
 class EmailsController extends Controller
 {
     /**
@@ -19,6 +18,11 @@ class EmailsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+
+    public $response_type;
+    public $response_msg;
+    public $response_code;
+
     public function index(Request $request)
     {
         // $email = Email::all();
@@ -43,51 +47,67 @@ class EmailsController extends Controller
     }
 
     public function insert(Request $request){
-        
-        // print_r($request->input('id'));
+
+        if ($this->postfix_config($request->input('from'), $request->input('to')) != "401") {
         $validator = Validator::make($request->all(), [ 
-            'from' => 'required|email', 
+            'from' => 'required|email|unique:emails,from', 
             'to' => 'required|email', 
+        ],[
+            'from.unique' => 'Duplicate forwarder'
         ]);
         if ($validator->fails()) { 
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
         $email = new Email;
-        $email->id = $request->input('id');
+        $email->id = $request->input('id'); 
         $email->from = $request->input('from');
         $email->to = $request->input('to');
         $result =  $email->save();
-
-	   $email_forwarder = $request->input('from'). "   ". $request->input('to');
-
-        if($result==1)
-        {
-	    //system('sudo chmod 777 /virtual');
-            $current_forwarder = $email_forwarder . "\n";
-            $current_forwarder .= file_get_contents('/virtual'); 
-            file_put_contents('/virtual',  $current_forwarder);
-            system('sudo docker exec emailserver postmap /etc/postfix/virtual');            
-            system('sudo docker exec emailserver postfix reload');
-
-            return response()->json(['success' => "forwarder added"], 200);
+       
         }
+            return response()->json([$this->response_type => $this->response_msg], $this->response_code);
 
+    }
+
+    public function api_show(Request $request){
+         
+        $from_add = $request->from;
+        $email = Email::where('from', $from_add)->first();
+        if ($email == null ){
+            return response()->json(['message' => "Forwarder not found"], 404);
+        }
+        else {
+            $email_from = $email->from;
+            $email_to   = $email->to;
+        }
+        return response()->json(['from' => $email_from, 'to' => $email_to], 200);
+    
     }
 
     public function delete(Request $request){
          
          $from_add = $request->from;
-         $email = Email::where('from', $from_add)->first();
+         $email = Email::where('from', $from_add)
+         ->whereNull('deleted_at')->first();
          if ($email == null ){
-            return abort(401);
-        }
-        else {
-         $this->destroy($email->id);
-        }
+            return response()->json(['message' => "Forwarder not found"], 404);
+            }
+            else {
+//                $this->destroy($email->id);
+                $email->forceDelete();
 
-         return "Forwarder Deleted";
+            $grep_forwarder = shell_exec("grep ^'$request->from' /email/virtual");
+            $grep_array = explode(' ', $grep_forwarder);
+            $content = file_get_contents('/email/virtual'); 
+            $content = str_replace($grep_forwarder, '', $content);
+            file_put_contents ('/email/virtual', $content);        
+            system('sudo docker exec emailserver postmap /etc/postfix/virtual');            
+            system('sudo docker exec emailserver postfix reload');
 
+            }
+
+            return response()->json(['success' => "Forwarder deleted"], 200);
     }
 
     public function updateemail(Request $request)
@@ -95,13 +115,89 @@ class EmailsController extends Controller
         $from_add = $request->from;
         $email = Email::where('from', $from_add)->first();
         if ($email == null ){
-            return abort(401);
+        
+            return response()->json(['message' => "Forwarder not found"], 404);
         }
         else {
-        $email->update($request->all());
-        }
+            $email->update($request->all());
 
-        return "Forwarder Updated";
+            $grep_forwarder = shell_exec("grep ^'$request->from' /email/virtual");
+            $grep_array = explode(' ', $grep_forwarder);
+            $new_forwarder = $grep_array[0] ."   ". $request->to ."\n"; 
+            $content = file_get_contents('/email/virtual'); 
+            $content = str_replace($grep_forwarder, $new_forwarder, $content);
+            file_put_contents ('/email/virtual', $content);        
+            system('sudo docker exec emailserver postmap /etc/postfix/virtual');            
+            system('sudo docker exec emailserver postfix reload');
+
+            }
+    
+            return response()->json(['success' => "Forwarder updated"], 200);
+    }
+
+    public function mx_check_record(Request $request) 
+    {    
+        $domain = $request->domain;
+        $check_dns = shell_exec("dig '$domain' mx +short");
+//      dd(strpos($check_dns, 'mail-forward.wpmudev.host'));
+        $mx = explode(' ', $check_dns);
+//      dd($mx);
+            if ((count($mx) > 2 ) && (strpos($check_dns, 'mail-forward.wpmudev.host') !== false))
+            {
+                $this->response_type = "error";
+                $this->response_msg = "MX found with multiple records";
+                $this->response_code = "409";                                    
+            }
+            elseif (($mx[0] != null) && (strpos($mx[1], 'mail-forward.wpmudev.host') !== false))
+            {
+                $this->response_type = "success";
+                $this->response_msg = "MX matched";
+                $this->response_code = "200";
+            }
+            else
+            {
+                $this->response_type = "message";
+                $this->response_msg = "MX not matched";
+                $this->response_code = "404";
+
+            }
+
+        return response()->json([$this->response_type => $this->response_msg], $this->response_code);
+    }
+
+    public function postfix_config($from, $to){
+
+        $email_forwarder = $from. "   ". $to;        
+        $domain = explode('@', $from)[1];
+
+        
+        $grep_domain = shell_exec("grep ^'$domain' /email/relaydomains");
+
+       if ($grep_domain == null ) {
+            $relaydomains = $domain . " #domain" . "\n"; 
+            $relaydomains .= file_get_contents('/email/relaydomains');
+            file_put_contents('/email/relaydomains',  $relaydomains);
+            system('sudo docker exec emailserver postmap /etc/postfix/relaydomains');
+        } 
+            $grep_forwarder = shell_exec("grep ^'$email_forwarder' /email/virtual");
+       
+        if ($grep_forwarder == null ){
+
+            $current_forwarder = $email_forwarder . "\n";
+            $current_forwarder .= file_get_contents('/email/virtual'); 
+            file_put_contents('/email/virtual',  $current_forwarder);
+            system('sudo docker exec emailserver postmap /etc/postfix/virtual');            
+            system('sudo docker exec emailserver postfix reload');
+            $this->response_type = "success";
+            $this->response_msg = "Forwarder added";
+            $this->response_code = 200;
+        } else {
+            $this->response_type = "error";
+            $this->response_msg = "Duplicate forwarder";
+            $this->response_code = "401";
+                } 
+
+    return $this->response_code;
 
     }
 
@@ -130,6 +226,21 @@ class EmailsController extends Controller
             return abort(401);
         }
         $email = Email::create($request->all());
+
+
+        $email_forwarder = $request->from . "   ". $request->to ;
+
+            // $domain = explode('@', $request->input('from'))[1];
+            // $relaydomains = $domain . "\n"; 
+            // $relaydomains .= file_get_contents('/email/relaydomains');
+            // file_put_contents('/email/relaydomains',  $relaydomains);
+
+        $current_forwarder = $email_forwarder . "\n";
+        $current_forwarder .= file_get_contents('/email/virtual'); 
+        file_put_contents('/email/virtual',  $current_forwarder);
+        system('sudo docker exec emailserver postmap /etc/postfix/virtual');            
+        system('sudo docker exec emailserver postfix reload');
+
 
         return redirect()->route('admin.emails.index');
     }
@@ -167,9 +278,17 @@ class EmailsController extends Controller
         $email = Email::findOrFail($id);
         $email->update($request->all());
 
+        $grep_forwarder = system("grep ^'$email->from' /email/virtual");
+        $grep_array = explode(' ', $grep_forwarder);
+        $new_forwarder = $grep_array[0] ."   ". $request->to; 
+        $content = file_get_contents('/email/virtual'); 
+        $content = str_replace($grep_forwarder, $new_forwarder, $content);
+        file_put_contents ('/email/virtual', $content);
+        system('sudo docker exec emailserver postmap /etc/postfix/virtual');            
+        system('sudo docker exec emailserver postfix reload');                
+        
         return redirect()->route('admin.emails.index');
     }
-
 
     /**
      * Display Email.
@@ -202,7 +321,7 @@ class EmailsController extends Controller
         //     return abort(401);
         // }
         $email = Email::findOrFail($id);
-        $email->delete();
+        $email->forceDelete();
 
         return redirect()->route('admin.emails.index');
     }

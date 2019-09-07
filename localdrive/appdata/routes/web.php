@@ -1,5 +1,6 @@
 <?php
 Route::get('/', function () { return redirect('/admin/home'); });
+Auth::routes(['register' => false]);
 
 // Authentication Routes...
 Route::get('login', 'Auth\LoginController@showLoginForm')->name('login');
@@ -19,6 +20,12 @@ Route::post('password/reset', 'Auth\ResetPasswordController@reset')->name('auth.
 Route::group(['middleware' => ['auth'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
     Route::get('/home', 'HomeController@index');
     
+    Route::resource('roles', 'Admin\RolesController');
+    Route::post('roles_mass_destroy', ['uses' => 'Admin\RolesController@massDestroy', 'as' => 'roles.mass_destroy']);
+    Route::resource('users', 'Admin\UsersController');
+    Route::post('users_mass_destroy', ['uses' => 'Admin\UsersController@massDestroy', 'as' => 'users.mass_destroy']);
+    
+    Route::get('/oauthclient','OauthclientController@index');   
     
     Route::resource('emails', 'Admin\EmailsController');
     Route::post('emails_mass_destroy', ['uses' => 'Admin\EmailsController@massDestroy', 'as' => 'emails.mass_destroy']);

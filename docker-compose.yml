@@ -21,7 +21,7 @@ services:
       - ./nginx/conf.d/:/etc/nginx/conf.d/
       - /var/run/docker.sock:/var/run/docker.sock
       - /usr/bin/docker:/usr/bin/docker
-      - ./localdrive/email/virtual:/virtual
+      - ./localdrive/email/:/email/
     networks:
       - email-forw-network
 
@@ -61,18 +61,22 @@ services:
 
   #Email service
   emailserver:
-    image: zixia/simple-mail-forwarder 
+    build:
+      context: .
+      dockerfile: ./email/Dockerfile
+#    image: zeshan/alpine-postfix 
     container_name: emailserver 
     restart: unless-stopped
     tty: true
     environment:
-      SMF_CONFIG: "zeshan@mydevops.space:xeshan.ahmed@gmail.com;xee@mydevops.space:xeshan.ahmed@gmail.com" 
       SERVICE_NAME: emailserver 
       SERVICE_TAGS: dev
     ports:
       - "25:25"
+      - "587:587"
     volumes:
       - ./localdrive/email/virtual:/etc/postfix/virtual
+      - ./localdrive/email/relaydomains:/etc/postfix/relaydomains
     networks:
       - email-forw-network
 

@@ -1,0 +1,12 @@
+DC_DIR="/root/hosting-email-forwarder"
+BACKUP_DIR="/bak/backup"
+MYSQL_HOST="localhost"
+MYSQL_PORT="3306"
+MYSQL_USER="root"
+MYSQL_PASSWORD="password"
+DATABASE_NAME="database-name"
+AMAZON_S3_BUCKET="s3://bucket-name/"
+DOCKER_COMPOSE="/usr/bin/docker-compose"
+FILES_TO_BACKUP=("/localdrive/email")
+AWS_ACCESS_KEY_ID=""
+AWS_SECRET_ACCESS_KEY=""

@@ -52,7 +52,7 @@
 {!! Form::open(['route' => 'auth.logout', 'style' => 'display:none;', 'id' => 'logout']) !!}
 <button type="submit">Logout</button>
 {!! Form::close() !!}
-
+<script src="{{ asset('js/app.js')}}"> </script>
 @include('partials.javascripts')
 </body>
 </html>
