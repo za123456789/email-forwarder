@@ -4,3 +4,5 @@ storage/framework/sessions/*
 storage/framework/cache/*
 storage/logs/*
 node_modules
+package-lock.json
+composer.lock
