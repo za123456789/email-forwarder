@@ -40,24 +40,39 @@ services:
     networks:
       - matchmde-network
 
-  #MySQL Service
-  db:
-    image: mysql:5.7.22
-    container_name: db
+  postgres_4:
+    image: postgres:11.5
     restart: unless-stopped
-    tty: true
     ports:
-      - "3306:3306"
-    environment:
-      MYSQL_DATABASE: laravel
-      MYSQL_ROOT_PASSWORD: wordpass 
-      SERVICE_TAGS: dev
-      SERVICE_NAME: mysql
+      - "5433:5432"
     volumes:
-      - ./localdrive/dbdata:/var/lib/mysql/
-      - ./mysql/my.cnf:/etc/mysql/my.cnf
+      - ./localdrive/dbdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: wordpass
+      POSTGRES_HOST_AUTH_METHOD: "trust"
     networks:
       - matchmde-network
+
+#   #MySQL Service
+#   db:
+#     image: mysql:5.7.22
+#     container_name: db
+#     restart: unless-stopped
+#     tty: true
+#     ports:
+#       - "3306:3306"
+#     environment:
+#       MYSQL_DATABASE: laravel
+#       MYSQL_ROOT_PASSWORD: wordpass 
+#       SERVICE_TAGS: dev
+#       SERVICE_NAME: mysql
+#     volumes:
+#       - ./localdrive/dbdata:/var/lib/mysql/
+#       - ./mysql/my.cnf:/etc/mysql/my.cnf
+#     networks:
+#       - matchmde-network
 
 #   #Email service
 #   emailserver:
