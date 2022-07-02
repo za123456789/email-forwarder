@@ -21,7 +21,6 @@ services:
       - ./nginx/conf.d/:/etc/nginx/conf.d/
       - /var/run/docker.sock:/var/run/docker.sock
       - /usr/bin/docker:/usr/bin/docker
-      - ./localdrive/email/:/email/
     networks:
       - matchmde-network
 
@@ -40,8 +39,10 @@ services:
     networks:
       - matchmde-network
 
-  postgres_4:
+  #postgres Service
+  postgres:
     image: postgres:11.5
+    container_name: db
     restart: unless-stopped
     ports:
       - "5433:5432"
@@ -52,48 +53,10 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_DB: wordpass
       POSTGRES_HOST_AUTH_METHOD: "trust"
+      SERVICE_TAGS: dev
+      SERVICE_NAME: postgres      
     networks:
       - matchmde-network
-
-#   #MySQL Service
-#   db:
-#     image: mysql:5.7.22
-#     container_name: db
-#     restart: unless-stopped
-#     tty: true
-#     ports:
-#       - "3306:3306"
-#     environment:
-#       MYSQL_DATABASE: laravel
-#       MYSQL_ROOT_PASSWORD: wordpass 
-#       SERVICE_TAGS: dev
-#       SERVICE_NAME: mysql
-#     volumes:
-#       - ./localdrive/dbdata:/var/lib/mysql/
-#       - ./mysql/my.cnf:/etc/mysql/my.cnf
-#     networks:
-#       - matchmde-network
-
-#   #Email service
-#   emailserver:
-#     build:
-#       context: .
-#       dockerfile: ./email/Dockerfile
-# #    image: zeshan/alpine-postfix 
-#     container_name: emailserver 
-#     restart: unless-stopped
-#     tty: true
-#     environment:
-#       SERVICE_NAME: emailserver 
-#       SERVICE_TAGS: dev
-#     ports:
-#       - "25:25"
-#       - "587:587"
-#     volumes:
-#       - ./localdrive/email/virtual:/etc/postfix/virtual
-#       - ./localdrive/email/relaydomains:/etc/postfix/relaydomains
-#     networks:
-#       - matchmde-network
 
 #Docker Networks
 networks:
