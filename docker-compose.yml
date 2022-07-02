@@ -23,7 +23,7 @@ services:
       - /usr/bin/docker:/usr/bin/docker
       - ./localdrive/email/:/email/
     networks:
-      - email-forw-network
+      - matchmde-network
 
   #Nginx Service
   webserver:
@@ -38,7 +38,7 @@ services:
       - ./localdrive/appdata:/var/www
       - ./nginx/conf.d/:/etc/nginx/conf.d/
     networks:
-      - email-forw-network
+      - matchmde-network
 
   #MySQL Service
   db:
@@ -57,32 +57,32 @@ services:
       - ./localdrive/dbdata:/var/lib/mysql/
       - ./mysql/my.cnf:/etc/mysql/my.cnf
     networks:
-      - email-forw-network
+      - matchmde-network
 
-  #Email service
-  emailserver:
-    build:
-      context: .
-      dockerfile: ./email/Dockerfile
-#    image: zeshan/alpine-postfix 
-    container_name: emailserver 
-    restart: unless-stopped
-    tty: true
-    environment:
-      SERVICE_NAME: emailserver 
-      SERVICE_TAGS: dev
-    ports:
-      - "25:25"
-      - "587:587"
-    volumes:
-      - ./localdrive/email/virtual:/etc/postfix/virtual
-      - ./localdrive/email/relaydomains:/etc/postfix/relaydomains
-    networks:
-      - email-forw-network
+#   #Email service
+#   emailserver:
+#     build:
+#       context: .
+#       dockerfile: ./email/Dockerfile
+# #    image: zeshan/alpine-postfix 
+#     container_name: emailserver 
+#     restart: unless-stopped
+#     tty: true
+#     environment:
+#       SERVICE_NAME: emailserver 
+#       SERVICE_TAGS: dev
+#     ports:
+#       - "25:25"
+#       - "587:587"
+#     volumes:
+#       - ./localdrive/email/virtual:/etc/postfix/virtual
+#       - ./localdrive/email/relaydomains:/etc/postfix/relaydomains
+#     networks:
+#       - matchmde-network
 
 #Docker Networks
 networks:
-  email-forw-network:
+  matchmde-network:
     driver: bridge
 #Volumes
 volumes:
