@@ -68,7 +68,7 @@ Point MX record to the server IP which emails you want forward
 
 URL -> localhost or ip-address
 
-- URL/api/email/add   		-> add new forwarder
+- URL/api/email/add   		-> add new forwarder 
 - URL/api/email/delete     	-> delete forwarder
 - URL/api/email/update		-> update forwarder
 
